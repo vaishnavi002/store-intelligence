@@ -1,49 +1,77 @@
-# Store Intelligence Architecture
+# Store Intelligence System – Design Overview
 
-## Overview
+## 1. System Objective
 
-Raw CCTV Clips
-→ Detection Layer
-→ Event Stream
-→ FastAPI Ingestion
-→ SQLite
-→ Metrics API
+The goal of this system is to simulate a real-time retail intelligence platform that processes in-store customer activity and converts raw event streams into meaningful business insights. The system supports ingestion of multi-camera events, zone-based movement tracking, billing queue analysis, and POS-based purchase mapping. It exposes APIs that allow retrieval of metrics, funnel analytics, heatmaps, and anomaly detection results.
 
-## Detection Layer
+## 2. High-Level Architecture
 
-Sample events are replayed through replay_events.py.
+The system follows a modular backend pipeline:
 
-Future production design:
-YOLOv8 + ByteTrack.
+Event Sources → FastAPI Ingestion Layer → SQLite Database → Analytics Layer → REST APIs
 
-## Event Stream
+### Components
 
-JSON events.
+- FastAPI Application: Handles ingestion and analytics APIs
+- SQLite Database (via SQLAlchemy): Stores normalized event data
+- Pipeline Layer: Transforms raw JSONL events into structured schema
+- Analytics Layer: Computes metrics, funnels, heatmaps, anomalies
 
-## Intelligence API
+## 3. Data Flow
 
-FastAPI.
+1. Raw events are ingested via `/events/ingest`
+2. Events are normalized into a unified schema
+3. Stored in SQLite database
+4. Analytics endpoints query stored data
+5. POS CSV is used for purchase inference
 
-## Database
+## 4. Metrics System
 
-SQLite.
+- Unique Visitors: Distinct non-staff visitor IDs
+- Total Events: Count of all valid events
+- Conversion Rate: Purchases / Unique Visitors * 100
+- Abandonment Rate: Billing drop-offs / Billing entries * 100
 
-## Anomaly Detection
+## 5. Funnel Logic
 
-Conversion drop.
-Queue spike.
-Dead zone.
+Customer journey stages:
+Entry → Zone Visit → Billing Queue → Purchase
 
-## AI-Assisted Decisions
+This helps identify drop-off points in the store journey.
 
-Used ChatGPT for:
+## 6. Heatmap Logic
 
-- Event schema design
-- FastAPI structure
-- Funnel calculation
+Heatmaps are generated using:
+- Zone entry frequency
+- Time spent in zone
+- Revenue zone weighting
 
-Accepted:
-...
+This highlights high engagement areas.
 
-Rejected:
-...
+## 7. Anomaly Detection
+
+Rule-based anomaly detection is implemented:
+- Conversion drop detection
+- Billing queue spike detection
+- Stale feed detection
+
+Each anomaly returns severity and recommended action.
+
+## 8. Design Trade-offs
+
+- SQLite used for simplicity
+- Rule-based analytics instead of ML
+- Replay-based pipeline instead of real streaming
+- No external dependencies like Kafka or Spark
+
+## 9. Scalability
+
+System can be extended to:
+- PostgreSQL for scale
+- Kafka for streaming ingestion
+- Redis for caching metrics
+- Spark/Flink for real-time processing
+
+## 10. Summary
+
+This system is a lightweight retail intelligence pipeline that simulates real-world analytics using modular and extensible design principles.

@@ -1,10 +1,9 @@
 from app.database import SessionLocal
 from app.models import EventModel
-from app.pos import get_purchase_count
+from app.pos import get_purchase_visitors
 
 
 def get_store_metrics(store_id: str):
-
     db = SessionLocal()
 
     events = db.query(EventModel).filter(
@@ -14,13 +13,12 @@ def get_store_metrics(store_id: str):
     db.close()
 
     visitors = set()
+    total_events = 0
+
     billing_visitors = set()
     abandoned_visitors = set()
 
-    total_events = 0
-
     for e in events:
-
         if e.is_staff:
             continue
 
@@ -29,43 +27,37 @@ def get_store_metrics(store_id: str):
         if e.visitor_id:
             visitors.add(e.visitor_id)
 
-        if e.event_type in [
-            "QUEUE_COMPLETED",
-            "BILLING_QUEUE_JOIN"
-        ]:
+        if e.event_type in ["QUEUE_COMPLETED", "queue_completed"]:
             billing_visitors.add(e.visitor_id)
 
-        if e.event_type in [
-            "QUEUE_ABANDONED",
-            "BILLING_QUEUE_ABANDON"
-        ]:
+        if e.event_type in ["QUEUE_ABANDONED", "queue_abandoned"]:
             abandoned_visitors.add(e.visitor_id)
+
+    # ✅ REAL PURCHASE LOGIC
+    purchase_visitors = get_purchase_visitors()
+
+    # Only count purchases for THIS store's visitors
+    valid_purchases = visitors.intersection(purchase_visitors)
 
     unique_visitors = len(visitors)
 
-    purchases = get_purchase_count()
+    conversion_rate = (
+        (len(valid_purchases) / unique_visitors) * 100
+        if unique_visitors > 0
+        else 0
+    )
 
-    conversion_rate = 0
-
-    if unique_visitors > 0:
-        conversion_rate = round(
-            (purchases / unique_visitors) * 100,
-            2
-        )
-
-    abandonment_rate = 0
-
-    if len(billing_visitors) > 0:
-        abandonment_rate = round(
-            (len(abandoned_visitors) / len(billing_visitors)) * 100,
-            2
-        )
+    abandonment_rate = (
+        (len(abandoned_visitors) / len(billing_visitors)) * 100
+        if len(billing_visitors) > 0
+        else 0
+    )
 
     return {
         "store_id": store_id,
         "unique_visitors": unique_visitors,
-        "conversion_rate": conversion_rate,
-        "abandonment_rate": abandonment_rate,
+        "conversion_rate": round(conversion_rate, 2),
+        "abandonment_rate": round(abandonment_rate, 2),
         "total_events": total_events,
-        "purchases": purchases
+        "purchases": len(valid_purchases)
     }

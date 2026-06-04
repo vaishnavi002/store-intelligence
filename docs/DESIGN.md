@@ -1,77 +1,116 @@
-# Store Intelligence System – Design Overview
 
-## 1. System Objective
+# System Design Document – Store Intelligence API
 
-The goal of this system is to simulate a real-time retail intelligence platform that processes in-store customer activity and converts raw event streams into meaningful business insights. The system supports ingestion of multi-camera events, zone-based movement tracking, billing queue analysis, and POS-based purchase mapping. It exposes APIs that allow retrieval of metrics, funnel analytics, heatmaps, and anomaly detection results.
+## 1. Overview
 
-## 2. High-Level Architecture
+The Store Intelligence system is designed to process multi-source retail events including camera-based tracking data, queue events, zone-level interactions, and POS transactions. The system transforms raw event streams into actionable retail insights such as conversion rates, customer engagement patterns, and operational anomalies.
 
-The system follows a modular backend pipeline:
+The primary goal is to provide real-time, scalable, and interpretable analytics for retail optimization.
 
-Event Sources → FastAPI Ingestion Layer → SQLite Database → Analytics Layer → REST APIs
+---
 
-### Components
+## 2. Architecture
 
-- FastAPI Application: Handles ingestion and analytics APIs
-- SQLite Database (via SQLAlchemy): Stores normalized event data
-- Pipeline Layer: Transforms raw JSONL events into structured schema
-- Analytics Layer: Computes metrics, funnels, heatmaps, anomalies
+The system follows a modular pipeline architecture:
 
-## 3. Data Flow
+### 2.1 Data Ingestion Layer
+- FastAPI endpoint receives event batches
+- Deduplication via event_id
+- Stores structured data into SQLite database
 
-1. Raw events are ingested via `/events/ingest`
-2. Events are normalized into a unified schema
-3. Stored in SQLite database
-4. Analytics endpoints query stored data
-5. POS CSV is used for purchase inference
+### 2.2 Metrics Engine
+- Computes:
+  - Unique visitors
+  - Total events
+  - Conversion rate (POS validated)
+  - Abandonment rate (queue-based)
 
-## 4. Metrics System
+### 2.3 Funnel Engine
+Tracks customer journey stages:
+- Entry → Zone Visit → Billing → Purchase
 
-- Unique Visitors: Distinct non-staff visitor IDs
-- Total Events: Count of all valid events
-- Conversion Rate: Purchases / Unique Visitors * 100
-- Abandonment Rate: Billing drop-offs / Billing entries * 100
+### 2.4 POS Integration Layer
+- Reads transactional CSV data
+- Maps purchases to visitor IDs
+- Ensures real conversion validation
 
-## 5. Funnel Logic
+### 2.5 Anomaly Detection Engine
+- Rule-based system that detects:
+  - Conversion drops
+  - Queue spikes
+  - Billing abandonment
+  - Funnel breakdowns
+- Outputs anomaly severity score (0–100)
 
-Customer journey stages:
-Entry → Zone Visit → Billing Queue → Purchase
+### 2.6 ML Scoring Layer
+- Lightweight predictive model
+- Uses features:
+  - Entry count
+  - Zone engagement
+  - Billing interactions
+- Outputs ML conversion score
 
-This helps identify drop-off points in the store journey.
+---
 
-## 6. Heatmap Logic
+## 3. AI-Assisted Decision Making (MANDATORY SECTION)
 
-Heatmaps are generated using:
-- Zone entry frequency
-- Time spent in zone
-- Revenue zone weighting
+AI techniques in this system are applied in a hybrid manner:
 
-This highlights high engagement areas.
+### 3.1 Rule-Based Intelligence
+Instead of relying on a heavy ML model, interpretable rules are used for:
+- anomaly detection
+- funnel validation
+- threshold-based alerts
 
-## 7. Anomaly Detection
+This ensures transparency and explainability.
 
-Rule-based anomaly detection is implemented:
-- Conversion drop detection
-- Billing queue spike detection
-- Stale feed detection
+### 3.2 Feature-Based ML Layer
+A lightweight predictive model estimates conversion probability using:
+- entry frequency
+- zone engagement intensity
+- billing activity
 
-Each anomaly returns severity and recommended action.
+This acts as a behavioral scoring system rather than a black-box model.
 
-## 8. Design Trade-offs
+### 3.3 Why Hybrid Approach?
+- Retail systems require explainability
+- Business users need actionable insights
+- Pure ML models are difficult to interpret in real-time systems
 
-- SQLite used for simplicity
-- Rule-based analytics instead of ML
-- Replay-based pipeline instead of real streaming
-- No external dependencies like Kafka or Spark
+Thus, combining rule-based logic with ML scoring ensures both accuracy and usability.
 
-## 9. Scalability
+---
 
-System can be extended to:
-- PostgreSQL for scale
-- Kafka for streaming ingestion
-- Redis for caching metrics
-- Spark/Flink for real-time processing
+## 4. Design Decisions
 
-## 10. Summary
+- SQLite chosen for simplicity and portability
+- FastAPI for async-ready performance
+- Event-driven architecture for extensibility
+- Modular design for easy scaling (Kafka-ready)
 
-This system is a lightweight retail intelligence pipeline that simulates real-world analytics using modular and extensible design principles.
+---
+
+## 5. Scalability Considerations
+
+- Stateless API design enables horizontal scaling
+- Event ingestion can be replaced with streaming systems (Kafka/Kinesis)
+- Database can migrate to PostgreSQL for production workloads
+
+---
+
+## 6. Limitations
+
+- Current ML model is lightweight (non-deep learning)
+- No real-time streaming pipeline yet
+- POS integration is batch-based
+
+---
+
+## 7. Future Improvements
+
+- Real-time Kafka ingestion
+- Deep learning-based footfall prediction
+- Computer vision integration for live tracking
+- Retail recommendation engine
+
+---

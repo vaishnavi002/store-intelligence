@@ -186,6 +186,26 @@ Returns:
 
 ---
 
+## 📦 Metrics Output Example
+
+```json
+{
+  "store_id": "ST1076",
+  "unique_visitors": 3,
+  "conversion_rate": 66.67,
+  "abandonment_rate": 33.33,
+  "total_events": 9,
+  "purchases": 2,
+  "ml_conversion_score": 0.82,
+  "anomaly_score": 45,
+  "anomalies": [
+    {
+      "type": "CONVERSION_DROP",
+      "severity": "WARN"
+    }
+  ]
+}
+
 ### Funnel
 
 GET

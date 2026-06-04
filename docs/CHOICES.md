@@ -1,88 +1,145 @@
-# Design Choices and Engineering Decisions
+# Design Choices and Engineering Decisions-> Technical Choices Document
 
-## 1. Framework Choice – FastAPI
+## 1. Model Selection
 
-FastAPI was chosen for:
-- High performance
-- Easy API development
-- Built-in validation with Pydantic
-- Excellent testing support
+### Why lightweight ML instead of deep learning?
 
-It allowed fast implementation within tight deadlines.
+We selected a lightweight feature-based scoring model because:
 
-## 2. Database Choice – SQLite
+- Real-time inference requirement
+- Limited labeled dataset
+- Need for interpretability
+- Faster execution in API layer
+
+The model uses:
+- entry count
+- zone activity
+- billing interactions
+
+This produces a probabilistic conversion score.
+
+---
+
+## 2. Schema Design
+
+### Event Schema
+
+Each event contains:
+
+- event_id (UUID)
+- store_id
+- camera_id
+- visitor_id
+- event_type
+- timestamp
+- is_staff
+- confidence
+
+### Design Rationale
+
+- Unified schema supports all event types:
+  - ENTRY
+  - ZONE_ENTERED
+  - BILLING
+  - QUEUE_ABANDONED
+- Enables easy filtering and aggregation
+
+---
+
+## 3. API Architecture
+
+### FastAPI was chosen because:
+
+- High performance async framework
+- Native Pydantic validation
+- Easy testing with TestClient
+- Production-ready simplicity
+
+---
+
+## 4. Metrics Design Decisions
+
+### Conversion Rate
+
+We define conversion as:
+
+> POS-based purchase visitors / unique visitors
+
+This avoids inflated conversion metrics from event-only systems.
+
+---
+
+### Abandonment Rate
+
+Calculated as:
+
+> abandoned visitors / billing visitors
+
+This reflects real checkout friction.
+
+---
+
+## 5. Anomaly System Design
+
+We implemented a rule-based anomaly engine:
+
+### Why rule-based?
+
+- Interpretability is critical
+- Retail stakeholders need clear reasons
+- Faster than training ML classifiers
+
+### Anomalies detected:
+
+- Conversion drop
+- Queue spike
+- Billing abandonment
+- Funnel breakdown
+
+Each anomaly contributes to a cumulative:
+
+> anomaly_score (0–100)
+
+---
+
+## 6. POS Integration Choice
+
+We used CSV-based POS ingestion because:
+
+- Hackathon constraint-friendly
+- Easy integration with pandas
+- Reliable batch processing
+
+---
+
+## 7. Database Choice
 
 SQLite was selected because:
-- Zero configuration required
-- Lightweight and portable
-- Suitable for evaluation environments
-- Easy integration with SQLAlchemy
 
-## 3. ORM – SQLAlchemy
+- Zero setup required
+- Fast local development
+- Sufficient for evaluation scale
 
-SQLAlchemy provides:
-- Clean schema definition
-- Easy migration to PostgreSQL
-- Structured query handling
+Can be replaced with PostgreSQL in production.
 
-## 4. Event Processing Strategy
+---
 
-A replay-based pipeline was used instead of real-time streaming:
-- Faster development
-- Deterministic testing
-- Simulated production-like ingestion
+## 8. Trade-offs
 
-## 5. Metrics Approach
+| Decision | Trade-off |
+|----------|----------|
+| Rule-based anomalies | Less adaptive than ML |
+| SQLite | Not scalable for large traffic |
+| Batch POS | Not real-time |
 
-Metrics are computed using:
-- Set-based visitor tracking
-- Event-type classification
-- POS CSV integration for purchases
+---
 
-## 6. Conversion Logic
+## 9. Summary
 
-Conversion rate is calculated as:
-Purchases / Unique Visitors * 100
+The system balances:
+- interpretability
+- performance
+- modularity
+- extensibility
 
-Ensures:
-- No division by zero
-- Proper percentage scaling
-
-## 7. Anomaly Detection
-
-Rule-based system used due to simplicity:
-- Conversion drop detection
-- Queue spike detection
-- Missing/stale data detection
-
-## 8. Heatmap Strategy
-
-Heatmaps are built using:
-- Zone visit frequency
-- Dwell time approximation
-- Revenue zone weighting
-
-## 9. File Structure
-
-- app/ → core API logic
-- pipeline/ → ingestion scripts
-- docs/ → documentation
-- tests/ → API tests
-- data/ → dataset storage
-
-## 10. Docker
-
-Docker setup is included for reproducibility:
-- Dockerfile for API containerization
-- docker-compose for orchestration
-
-## 11. Trade-offs
-
-- No ML models due to time constraints
-- No distributed systems
-- No caching layer
-- Simplified schema for speed
-
-## 12. Summary
-
-The system prioritizes correctness, clarity, and modularity while simulating a real-world retail intelligence pipeline within limited time constraints.
+making it suitable for production extension.

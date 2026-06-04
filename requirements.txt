@@ -8,6 +8,6 @@ opencv-python
 ultralytics
 python-
 requests
-
-
-
+scikit-learn 
+joblib
+numpy

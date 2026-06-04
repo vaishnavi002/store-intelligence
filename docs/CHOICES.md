@@ -1,45 +1,88 @@
-# Choice 1: Detection Model
+# Design Choices and Engineering Decisions
 
-Options:
-- YOLOv8
-- RT-DETR
-- MediaPipe
+## 1. Framework Choice – FastAPI
 
-AI suggested:
-YOLOv8
+FastAPI was chosen for:
+- High performance
+- Easy API development
+- Built-in validation with Pydantic
+- Excellent testing support
 
-Chosen:
-YOLOv8
+It allowed fast implementation within tight deadlines.
 
-Reason:
-Large ecosystem.
-Retail-friendly.
-Easy ByteTrack integration.
+## 2. Database Choice – SQLite
 
----
+SQLite was selected because:
+- Zero configuration required
+- Lightweight and portable
+- Suitable for evaluation environments
+- Easy integration with SQLAlchemy
 
-# Choice 2: Event Schema
+## 3. ORM – SQLAlchemy
 
-Options:
-- Flat schema
-- Nested schema
+SQLAlchemy provides:
+- Clean schema definition
+- Easy migration to PostgreSQL
+- Structured query handling
 
-Chosen:
-Nested schema
+## 4. Event Processing Strategy
 
-Reason:
-Supports future metadata.
+A replay-based pipeline was used instead of real-time streaming:
+- Faster development
+- Deterministic testing
+- Simulated production-like ingestion
 
----
+## 5. Metrics Approach
 
-# Choice 3: Database
+Metrics are computed using:
+- Set-based visitor tracking
+- Event-type classification
+- POS CSV integration for purchases
 
-Options:
-- SQLite
-- PostgreSQL
+## 6. Conversion Logic
 
-Chosen:
-SQLite
+Conversion rate is calculated as:
+Purchases / Unique Visitors * 100
 
-Reason:
-Fastest implementation within challenge timeline.
+Ensures:
+- No division by zero
+- Proper percentage scaling
+
+## 7. Anomaly Detection
+
+Rule-based system used due to simplicity:
+- Conversion drop detection
+- Queue spike detection
+- Missing/stale data detection
+
+## 8. Heatmap Strategy
+
+Heatmaps are built using:
+- Zone visit frequency
+- Dwell time approximation
+- Revenue zone weighting
+
+## 9. File Structure
+
+- app/ → core API logic
+- pipeline/ → ingestion scripts
+- docs/ → documentation
+- tests/ → API tests
+- data/ → dataset storage
+
+## 10. Docker
+
+Docker setup is included for reproducibility:
+- Dockerfile for API containerization
+- docker-compose for orchestration
+
+## 11. Trade-offs
+
+- No ML models due to time constraints
+- No distributed systems
+- No caching layer
+- Simplified schema for speed
+
+## 12. Summary
+
+The system prioritizes correctness, clarity, and modularity while simulating a real-world retail intelligence pipeline within limited time constraints.
